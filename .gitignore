@@ -1,0 +1,15 @@
+.anchor
+.DS_Store
+target/
+**/*.rs.bk
+node_modules/
+test-ledger/
+.yarn/
+yarn-error.log
+*.log
+
+# Keypairs — never commit
+*.json
+!package.json
+!tsconfig.json
+!Anchor.toml.example
