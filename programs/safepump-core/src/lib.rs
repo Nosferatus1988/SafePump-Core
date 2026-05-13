@@ -3,7 +3,7 @@ use anchor_lang::system_program;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount, Transfer};
 
-declare_id!("SPump1111111111111111111111111111111111111");
+declare_id!("H3DyK56MDPAfcHwocGyUEeTS4oS9avkZ7xxz26R5Fe9z");
 
 pub const SNIPE_WINDOW_SLOTS: u64 = 10;
 pub const VESTING_DURATION_SECONDS: i64 = 48 * 60 * 60;
@@ -45,7 +45,7 @@ pub mod safepump_core {
         let seeds: &[&[u8]] = &[b"bonding_curve", mint_key.as_ref(), &[bump]];
         let signer: &[&[&[u8]]] = &[seeds];
         let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.token_program.key(),
             MintTo {
                 mint: ctx.accounts.mint.to_account_info(),
                 to: ctx.accounts.token_vault.to_account_info(),
@@ -107,7 +107,7 @@ pub mod safepump_core {
 
         // SOL in: buyer -> bonding_curve PDA (the curve account itself stores lamports).
         let cpi_ctx = CpiContext::new(
-            ctx.accounts.system_program.to_account_info(),
+            ctx.accounts.system_program.key(),
             system_program::Transfer {
                 from: ctx.accounts.buyer.to_account_info(),
                 to: curve.to_account_info(),
@@ -127,7 +127,7 @@ pub mod safepump_core {
             ctx.accounts.buyer_token_account.to_account_info()
         };
         let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.token_program.key(),
             Transfer {
                 from: ctx.accounts.token_vault.to_account_info(),
                 to: destination,
@@ -195,7 +195,7 @@ pub mod safepump_core {
         let signer: &[&[&[u8]]] = &[seeds];
 
         let cpi_ctx = CpiContext::new_with_signer(
-            ctx.accounts.token_program.to_account_info(),
+            ctx.accounts.token_program.key(),
             Transfer {
                 from: ctx.accounts.vesting_token_vault.to_account_info(),
                 to: ctx.accounts.beneficiary_token_account.to_account_info(),
