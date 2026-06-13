@@ -14,3 +14,7 @@ yarn-error.log
 !package-lock.json
 !tsconfig.json
 !Anchor.toml.example
+!mainnet-launch/token.config.json
+!mainnet-launch/metadata/*.json
+mainnet-launch/keys/
+mainnet-launch/*.keypair.json

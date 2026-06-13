@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="SolPump is the public token and launch interface for the SafePump anti-snipe bonding-curve protocol on Solana."
+    />
+    <title>SolPump | SafePump Launch Console</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="SolPump home">
+        <span class="brand-mark">SP</span>
+        <span>
+          <strong>SolPump</strong>
+          <small>SafePump protocol</small>
+        </span>
+      </a>
+      <nav class="nav" aria-label="Primary">
+        <a href="#console">Console</a>
+        <a href="#token">Token</a>
+        <a href="#investors">Investors</a>
+        <a href="#launch">Launch</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="terminal-hero" id="console" aria-labelledby="hero-title">
+        <canvas id="heroCanvas" aria-hidden="true"></canvas>
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Mainnet candidate token</p>
+            <h1 id="hero-title">SolPump</h1>
+            <p class="hero-lede">
+              Anti-snipe launch infrastructure for Solana token sales with
+              first-slot vesting, constant-product pricing, and transparent
+              launch controls.
+            </p>
+            <div class="hero-actions" aria-label="Launch actions">
+              <a class="button primary" href="#launch">Launch plan</a>
+              <a class="button secondary" href="#investors">Investor room</a>
+            </div>
+          </div>
+
+          <section class="console-panel" aria-label="Live protocol console">
+            <div class="panel-header">
+              <span>Protocol console</span>
+              <strong>DEVNET VERIFIED</strong>
+            </div>
+            <div class="metric-grid">
+              <article>
+                <span>Program</span>
+                <strong>FMAh...Xj5q</strong>
+              </article>
+              <article>
+                <span>Token</span>
+                <strong>SOLPUMP</strong>
+              </article>
+              <article>
+                <span>Status</span>
+                <strong>Mainnet prep</strong>
+              </article>
+              <article>
+                <span>Authority</span>
+                <strong>Multisig target</strong>
+              </article>
+            </div>
+            <div class="status-lines" aria-label="Launch status">
+              <div><span class="dot ok"></span> Devnet program deployed</div>
+              <div><span class="dot ok"></span> Anchor IDL published</div>
+              <div><span class="dot warn"></span> Mainnet mint pending</div>
+              <div><span class="dot hold"></span> Audit and liquidity pending</div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="section split" id="token" aria-labelledby="token-title">
+        <div>
+          <p class="eyebrow">Token model</p>
+          <h2 id="token-title">SOLPUMP draft economics</h2>
+          <p>
+            The launch config is staged for a fixed-supply SPL token. Final
+            minting waits for owner confirmation, public metadata hosting, and
+            treasury wallet approval.
+          </p>
+          <dl class="spec-list">
+            <div>
+              <dt>Name</dt>
+              <dd>SolPump</dd>
+            </div>
+            <div>
+              <dt>Symbol</dt>
+              <dd>SOLPUMP</dd>
+            </div>
+            <div>
+              <dt>Draft supply</dt>
+              <dd>1,000,000,000</dd>
+            </div>
+            <div>
+              <dt>Decimals</dt>
+              <dd>9</dd>
+            </div>
+          </dl>
+        </div>
+
+        <div class="allocation" aria-label="Draft allocation">
+          <div class="donut" aria-hidden="true"></div>
+          <ul>
+            <li><span class="swatch liquidity"></span>Liquidity and curve 55%</li>
+            <li><span class="swatch treasury"></span>Treasury 20%</li>
+            <li><span class="swatch ecosystem"></span>Ecosystem 15%</li>
+            <li><span class="swatch team"></span>Team vesting 7%</li>
+            <li><span class="swatch seed"></span>Seed investors 3%</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section tool-band" aria-labelledby="curve-title">
+        <div class="tool-copy">
+          <p class="eyebrow">Bonding curve</p>
+          <h2 id="curve-title">Launch quote simulator</h2>
+          <p>
+            Same constant-product shape as the SafePump core program. Values are
+            client-side estimates for public launch analysis.
+          </p>
+        </div>
+
+        <div class="curve-tool">
+          <canvas
+            id="curveCanvas"
+            width="960"
+            height="540"
+            aria-label="Bonding curve chart"
+          ></canvas>
+          <form class="quote-form" aria-label="Curve inputs">
+            <label>
+              SOL in
+              <input id="solIn" type="range" min="1" max="100" value="12" />
+              <output id="solInOut">12 SOL</output>
+            </label>
+            <label>
+              Virtual SOL
+              <input id="vSol" type="range" min="10" max="150" value="30" />
+              <output id="vSolOut">30 SOL</output>
+            </label>
+            <label>
+              Virtual tokens
+              <input id="vTokens" type="range" min="250" max="1500" value="1073" />
+              <output id="vTokensOut">1.073B</output>
+            </label>
+          </form>
+          <div class="quote-result" aria-live="polite">
+            <span>Estimated tokens out</span>
+            <strong id="tokensOut">0</strong>
+          </div>
+        </div>
+      </section>
+
+      <section class="section investor-grid" id="investors" aria-labelledby="investors-title">
+        <div class="investor-copy">
+          <p class="eyebrow">Investor room</p>
+          <h2 id="investors-title">Mainnet readiness without hype debt</h2>
+          <p>
+            Investors need proof, not promises: verified program state, locked
+            team allocation, public treasury wallets, audit scope, and a launch
+            calendar that does not front-run the community.
+          </p>
+        </div>
+        <article class="investor-card">
+          <span>Proof</span>
+          <strong>Devnet program live</strong>
+          <p>Program, IDL, tests, and source are public in the repository.</p>
+        </article>
+        <article class="investor-card">
+          <span>Risk</span>
+          <strong>Mainnet blocked until audit</strong>
+          <p>Trading contract and liquidity migration require review before real funds.</p>
+        </article>
+        <article class="investor-card">
+          <span>Trust</span>
+          <strong>Authority plan required</strong>
+          <p>Mint, freeze, upgrade, and treasury authorities should move to multisig.</p>
+        </article>
+      </section>
+
+      <section class="section launch-board" id="launch" aria-labelledby="launch-title">
+        <div>
+          <p class="eyebrow">Mainnet board</p>
+          <h2 id="launch-title">Release gates</h2>
+        </div>
+        <ol class="release-list">
+          <li class="done">
+            <strong>Devnet MVP</strong>
+            <span>Program deployed, IDL published, tests passing.</span>
+          </li>
+          <li class="active">
+            <strong>Token package</strong>
+            <span>SolPump config, metadata, and mainnet command plan staged.</span>
+          </li>
+          <li>
+            <strong>Public assets</strong>
+            <span>Logo, hosted metadata URI, website domain, and social accounts.</span>
+          </li>
+          <li>
+            <strong>Security review</strong>
+            <span>Program audit, authority handoff, and liquidity migration checks.</span>
+          </li>
+          <li>
+            <strong>Mainnet execution</strong>
+            <span>Manual confirmation, simulation, token mint, and authority revocation.</span>
+          </li>
+        </ol>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>SolPump by SafePump</span>
+      <button id="copyProgram" class="copy-button" type="button">
+        Copy devnet program
+      </button>
+    </footer>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>

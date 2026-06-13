@@ -1,0 +1,26 @@
+{
+  "name": "SolPump",
+  "symbol": "SOLPUMP",
+  "description": "SolPump is the public token for the SafePump anti-snipe launchpad on Solana.",
+  "image": "https://solpump.io/assets/solpump-token.png",
+  "external_url": "https://solpump.io",
+  "extensions": {
+    "website": "https://solpump.io",
+    "x": "https://x.com/solpump",
+    "telegram": "https://t.me/solpump"
+  },
+  "attributes": [
+    {
+      "trait_type": "Network",
+      "value": "Solana"
+    },
+    {
+      "trait_type": "Protocol",
+      "value": "SafePump"
+    },
+    {
+      "trait_type": "Launch model",
+      "value": "Anti-snipe bonding curve"
+    }
+  ]
+}

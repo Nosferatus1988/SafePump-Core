@@ -1,0 +1,52 @@
+{
+  "cluster": "mainnet-beta",
+  "tokenProgram": "classic-spl",
+  "token": {
+    "name": "SolPump",
+    "symbol": "SOLPUMP",
+    "decimals": 9,
+    "totalSupply": "1000000000",
+    "description": "SolPump is the public token for the SafePump anti-snipe launchpad on Solana.",
+    "metadataUri": "https://solpump.io/metadata/solpump-token.json"
+  },
+  "authorities": {
+    "mintAuthority": "9WPztx4YNSrLr1ZD61kKziwqryQhrrTPomx6HodyJCS9",
+    "freezeAuthority": null,
+    "treasuryOwner": "REPLACE_WITH_MULTISIG_OR_TREASURY_WALLET",
+    "revokeMintAuthorityAfterMint": true
+  },
+  "allocation": [
+    {
+      "label": "Liquidity and bonding curve",
+      "percent": 55,
+      "vesting": "Unlocked for liquidity deployment"
+    },
+    {
+      "label": "Treasury",
+      "percent": 20,
+      "vesting": "Multisig controlled"
+    },
+    {
+      "label": "Ecosystem incentives",
+      "percent": 15,
+      "vesting": "Programmatic campaigns"
+    },
+    {
+      "label": "Team",
+      "percent": 7,
+      "vesting": "12 month cliff, 24 month linear vest"
+    },
+    {
+      "label": "Seed investors",
+      "percent": 3,
+      "vesting": "6 month cliff, 18 month linear vest"
+    }
+  ],
+  "requiredBeforeMainnet": [
+    "Confirm final symbol and supply",
+    "Host token image and metadata URI publicly",
+    "Replace treasury owner with a multisig",
+    "Simulate every transaction",
+    "Confirm mainnet spend in writing"
+  ]
+}

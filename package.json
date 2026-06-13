@@ -8,6 +8,7 @@
     "test": "anchor test --validator legacy",
     "test:devnet": "anchor test --skip-local-validator --skip-deploy --provider.cluster devnet",
     "test:ts": "ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts",
+    "token:plan": "node mainnet-launch/scripts/plan-token-launch.mjs",
     "lint:fix": "prettier \"**/*{.js,.ts,md,json}\" -w",
     "lint": "prettier \"**/*{.js,.ts,md,json}\" --check"
   },

@@ -17,6 +17,23 @@ Deployed on devnet with upgrade authority
 The matching local keypair is generated under `target/deploy/` and is ignored by
 git. Do not commit deploy keypairs.
 
+## SolPump Mainnet Prep
+
+The public token name is staged as `SolPump` with draft symbol `SOLPUMP`.
+Mainnet token creation is prepared under [mainnet-launch](mainnet-launch/), but
+no mainnet transaction is automated or executed by the repository scripts.
+
+Generate the mainnet token plan:
+
+```bash
+npm run token:plan
+```
+
+The investor-facing static site is under [site](site/). Open
+[site/index.html](site/index.html) directly in a browser, or publish it with the
+example GitHub Pages workflow in [docs](docs/) after Pages is configured for
+GitHub Actions.
+
 ## Anti-MEV model
 
 Token launches on Solana get sniped in the first slots by bots that buy a large
