@@ -6,10 +6,10 @@ resolution = true
 skip-lint = false
 
 [programs.localnet]
-safepump_core = "H3DyK56MDPAfcHwocGyUEeTS4oS9avkZ7xxz26R5Fe9z"
+safepump_core = "FMAhGG8ETyqnd4zan4HBdLRPEQvk7Cvc6kzWbsvnXj5q"
 
 [programs.devnet]
-safepump_core = "H3DyK56MDPAfcHwocGyUEeTS4oS9avkZ7xxz26R5Fe9z"
+safepump_core = "FMAhGG8ETyqnd4zan4HBdLRPEQvk7Cvc6kzWbsvnXj5q"
 
 [registry]
 url = "https://api.apr.dev"
@@ -18,5 +18,9 @@ url = "https://api.apr.dev"
 cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
+[test.validator]
+rpc_port = 8900
+faucet_port = 9901
+
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "npm run test:ts"

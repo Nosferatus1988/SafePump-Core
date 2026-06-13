@@ -11,5 +11,6 @@ yarn-error.log
 # Keypairs — never commit
 *.json
 !package.json
+!package-lock.json
 !tsconfig.json
 !Anchor.toml.example

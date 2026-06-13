@@ -3,7 +3,7 @@ use anchor_lang::system_program;
 use anchor_spl::associated_token::AssociatedToken;
 use anchor_spl::token::{self, Mint, MintTo, Token, TokenAccount, Transfer};
 
-declare_id!("H3DyK56MDPAfcHwocGyUEeTS4oS9avkZ7xxz26R5Fe9z");
+declare_id!("FMAhGG8ETyqnd4zan4HBdLRPEQvk7Cvc6kzWbsvnXj5q");
 
 pub const SNIPE_WINDOW_SLOTS: u64 = 10;
 pub const VESTING_DURATION_SECONDS: i64 = 48 * 60 * 60;
@@ -17,6 +17,7 @@ pub mod safepump_core {
         virtual_sol_reserves: u64,
         virtual_token_reserves: u64,
         token_supply: u64,
+        graduation_sol_target: u64,
     ) -> Result<()> {
         require!(
             virtual_sol_reserves > 0 && virtual_token_reserves > 0,
@@ -37,6 +38,7 @@ pub mod safepump_core {
         curve.real_sol_reserves = 0;
         curve.real_token_reserves = token_supply;
         curve.token_total_supply = token_supply;
+        curve.graduation_sol_target = graduation_sol_target;
         curve.complete = false;
         curve.bump = ctx.bumps.bonding_curve;
 
@@ -60,6 +62,7 @@ pub mod safepump_core {
             creator: curve.creator,
             mint_slot: curve.mint_slot,
             token_supply,
+            graduation_sol_target,
         });
         Ok(())
     }
@@ -73,21 +76,9 @@ pub mod safepump_core {
         let slot_delta = clock.slot.saturating_sub(curve.mint_slot);
         let is_snipe = slot_delta < SNIPE_WINDOW_SLOTS;
 
-        // Constant product: tokens_out = vtok - (vsol * vtok) / (vsol + sol_in)
-        let k = (curve.virtual_sol_reserves as u128)
-            .checked_mul(curve.virtual_token_reserves as u128)
-            .ok_or(ErrorCode::MathOverflow)?;
-        let new_vsol = (curve.virtual_sol_reserves as u128)
-            .checked_add(sol_amount as u128)
-            .ok_or(ErrorCode::MathOverflow)?;
-        let new_vtok = k.checked_div(new_vsol).ok_or(ErrorCode::MathOverflow)?;
-        let tokens_out_u128 = (curve.virtual_token_reserves as u128)
-            .checked_sub(new_vtok)
-            .ok_or(ErrorCode::MathOverflow)?;
-        let tokens_out: u64 = tokens_out_u128
-            .try_into()
-            .map_err(|_| ErrorCode::MathOverflow)?;
+        let (tokens_out, new_vsol, new_vtok) = quote_buy(curve, sol_amount)?;
 
+        require!(tokens_out > 0, ErrorCode::ZeroOutput);
         require!(tokens_out >= min_tokens_out, ErrorCode::SlippageExceeded);
         require!(
             tokens_out <= curve.real_token_reserves,
@@ -126,6 +117,31 @@ pub mod safepump_core {
         } else {
             ctx.accounts.buyer_token_account.to_account_info()
         };
+
+        if is_snipe {
+            let vault = &mut ctx.accounts.vesting_vault;
+            if vault.beneficiary == Pubkey::default() {
+                vault.beneficiary = ctx.accounts.buyer.key();
+                vault.mint = curve.mint;
+                vault.bump = ctx.bumps.vesting_vault;
+            } else {
+                require!(
+                    vault.beneficiary == ctx.accounts.buyer.key(),
+                    ErrorCode::WrongBeneficiary
+                );
+                require!(vault.mint == curve.mint, ErrorCode::WrongMint);
+            }
+            vault.amount = vault
+                .amount
+                .checked_add(tokens_out)
+                .ok_or(ErrorCode::MathOverflow)?;
+            // Every snipe resets the 48h clock, so repeat sniping compounds the penalty.
+            vault.unlock_timestamp = clock
+                .unix_timestamp
+                .checked_add(VESTING_DURATION_SECONDS)
+                .ok_or(ErrorCode::MathOverflow)?;
+        }
+
         let cpi_ctx = CpiContext::new_with_signer(
             ctx.accounts.token_program.key(),
             Transfer {
@@ -138,28 +154,12 @@ pub mod safepump_core {
         token::transfer(cpi_ctx, tokens_out)?;
 
         if is_snipe {
-            let vault = &mut ctx.accounts.vesting_vault;
-            if vault.beneficiary == Pubkey::default() {
-                vault.beneficiary = ctx.accounts.buyer.key();
-                vault.mint = curve.mint;
-                vault.bump = ctx.bumps.vesting_vault;
-            }
-            vault.amount = vault
-                .amount
-                .checked_add(tokens_out)
-                .ok_or(ErrorCode::MathOverflow)?;
-            // Every snipe resets the 48h clock — repeat sniping compounds the penalty.
-            vault.unlock_timestamp = clock
-                .unix_timestamp
-                .checked_add(VESTING_DURATION_SECONDS)
-                .ok_or(ErrorCode::MathOverflow)?;
-
             emit!(SnipeLocked {
                 buyer: ctx.accounts.buyer.key(),
                 mint: curve.mint,
                 slot_delta,
                 tokens_locked: tokens_out,
-                unlock_timestamp: vault.unlock_timestamp,
+                unlock_timestamp: ctx.accounts.vesting_vault.unlock_timestamp,
             });
         } else {
             emit!(BuyExecuted {
@@ -169,6 +169,72 @@ pub mod safepump_core {
                 tokens_out,
             });
         }
+
+        if mark_complete(curve) {
+            emit!(CurveCompleted {
+                mint: curve.mint,
+                real_sol_reserves: curve.real_sol_reserves,
+                real_token_reserves: curve.real_token_reserves,
+            });
+        }
+
+        Ok(())
+    }
+
+    pub fn sell(ctx: Context<Sell>, token_amount: u64, min_sol_out: u64) -> Result<()> {
+        require!(token_amount > 0, ErrorCode::ZeroAmount);
+        require!(
+            !ctx.accounts.bonding_curve.complete,
+            ErrorCode::CurveComplete
+        );
+
+        let (sol_out, new_vsol, new_vtok) = quote_sell(&ctx.accounts.bonding_curve, token_amount)?;
+        require!(sol_out > 0, ErrorCode::ZeroOutput);
+        require!(sol_out >= min_sol_out, ErrorCode::SlippageExceeded);
+        require!(
+            sol_out <= ctx.accounts.bonding_curve.real_sol_reserves,
+            ErrorCode::InsufficientSolReserves
+        );
+
+        let cpi_ctx = CpiContext::new(
+            ctx.accounts.token_program.key(),
+            Transfer {
+                from: ctx.accounts.seller_token_account.to_account_info(),
+                to: ctx.accounts.token_vault.to_account_info(),
+                authority: ctx.accounts.seller.to_account_info(),
+            },
+        );
+        token::transfer(cpi_ctx, token_amount)?;
+
+        let curve_info = ctx.accounts.bonding_curve.to_account_info();
+        let seller_info = ctx.accounts.seller.to_account_info();
+        **curve_info.try_borrow_mut_lamports()? = curve_info
+            .lamports()
+            .checked_sub(sol_out)
+            .ok_or(ErrorCode::MathOverflow)?;
+        **seller_info.try_borrow_mut_lamports()? = seller_info
+            .lamports()
+            .checked_add(sol_out)
+            .ok_or(ErrorCode::MathOverflow)?;
+
+        let curve = &mut ctx.accounts.bonding_curve;
+        curve.virtual_sol_reserves = new_vsol;
+        curve.virtual_token_reserves = new_vtok;
+        curve.real_sol_reserves = curve
+            .real_sol_reserves
+            .checked_sub(sol_out)
+            .ok_or(ErrorCode::MathOverflow)?;
+        curve.real_token_reserves = curve
+            .real_token_reserves
+            .checked_add(token_amount)
+            .ok_or(ErrorCode::MathOverflow)?;
+
+        emit!(SellExecuted {
+            seller: ctx.accounts.seller.key(),
+            mint: curve.mint,
+            tokens_in: token_amount,
+            sol_out,
+        });
 
         Ok(())
     }
@@ -186,12 +252,7 @@ pub mod safepump_core {
         let beneficiary = vault.beneficiary;
         let mint = vault.mint;
         let bump = vault.bump;
-        let seeds: &[&[u8]] = &[
-            b"vesting",
-            beneficiary.as_ref(),
-            mint.as_ref(),
-            &[bump],
-        ];
+        let seeds: &[&[u8]] = &[b"vesting", beneficiary.as_ref(), mint.as_ref(), &[bump]];
         let signer: &[&[&[u8]]] = &[seeds];
 
         let cpi_ctx = CpiContext::new_with_signer(
@@ -309,6 +370,39 @@ pub struct Buy<'info> {
 }
 
 #[derive(Accounts)]
+pub struct Sell<'info> {
+    #[account(mut)]
+    pub seller: Signer<'info>,
+
+    pub mint: Account<'info, Mint>,
+
+    #[account(
+        mut,
+        seeds = [b"bonding_curve", mint.key().as_ref()],
+        bump = bonding_curve.bump,
+        has_one = mint @ ErrorCode::WrongMint,
+    )]
+    pub bonding_curve: Account<'info, BondingCurve>,
+
+    #[account(
+        mut,
+        seeds = [b"token_vault", mint.key().as_ref()],
+        bump,
+    )]
+    pub token_vault: Account<'info, TokenAccount>,
+
+    #[account(
+        mut,
+        associated_token::mint = mint,
+        associated_token::authority = seller,
+    )]
+    pub seller_token_account: Account<'info, TokenAccount>,
+
+    pub token_program: Program<'info, Token>,
+    pub associated_token_program: Program<'info, AssociatedToken>,
+}
+
+#[derive(Accounts)]
 pub struct ClaimVested<'info> {
     #[account(mut)]
     pub beneficiary: Signer<'info>,
@@ -356,6 +450,7 @@ pub struct BondingCurve {
     pub real_sol_reserves: u64,
     pub real_token_reserves: u64,
     pub token_total_supply: u64,
+    pub graduation_sol_target: u64,
     pub complete: bool,
     pub bump: u8,
 }
@@ -376,6 +471,7 @@ pub struct CurveInitialized {
     pub creator: Pubkey,
     pub mint_slot: u64,
     pub token_supply: u64,
+    pub graduation_sol_target: u64,
 }
 
 #[event]
@@ -384,6 +480,14 @@ pub struct BuyExecuted {
     pub mint: Pubkey,
     pub sol_in: u64,
     pub tokens_out: u64,
+}
+
+#[event]
+pub struct SellExecuted {
+    pub seller: Pubkey,
+    pub mint: Pubkey,
+    pub tokens_in: u64,
+    pub sol_out: u64,
 }
 
 #[event]
@@ -402,6 +506,13 @@ pub struct VestedClaimed {
     pub amount: u64,
 }
 
+#[event]
+pub struct CurveCompleted {
+    pub mint: Pubkey,
+    pub real_sol_reserves: u64,
+    pub real_token_reserves: u64,
+}
+
 #[error_code]
 pub enum ErrorCode {
     #[msg("Reserves must be greater than zero")]
@@ -410,6 +521,8 @@ pub enum ErrorCode {
     InvalidSupply,
     #[msg("Amount must be greater than zero")]
     ZeroAmount,
+    #[msg("Trade output rounded to zero")]
+    ZeroOutput,
     #[msg("Bonding curve has graduated and is no longer active")]
     CurveComplete,
     #[msg("Math overflow")]
@@ -418,6 +531,8 @@ pub enum ErrorCode {
     SlippageExceeded,
     #[msg("Insufficient liquidity in curve")]
     InsufficientLiquidity,
+    #[msg("Insufficient SOL reserves in curve")]
+    InsufficientSolReserves,
     #[msg("Vesting period has not elapsed")]
     StillLocked,
     #[msg("Nothing to claim")]
@@ -426,4 +541,77 @@ pub enum ErrorCode {
     WrongBeneficiary,
     #[msg("Mint mismatch")]
     WrongMint,
+}
+
+fn quote_buy(curve: &BondingCurve, sol_amount: u64) -> Result<(u64, u64, u64)> {
+    let k = invariant(curve)?;
+    let new_vsol = (curve.virtual_sol_reserves as u128)
+        .checked_add(sol_amount as u128)
+        .ok_or(ErrorCode::MathOverflow)?;
+    let new_vtok = div_ceil(k, new_vsol)?;
+    let tokens_out_u128 = (curve.virtual_token_reserves as u128)
+        .checked_sub(new_vtok)
+        .ok_or(ErrorCode::MathOverflow)?;
+
+    Ok((
+        to_u64(tokens_out_u128)?,
+        to_u64(new_vsol)?,
+        to_u64(new_vtok)?,
+    ))
+}
+
+fn quote_sell(curve: &BondingCurve, token_amount: u64) -> Result<(u64, u64, u64)> {
+    let k = invariant(curve)?;
+    let new_vtok = (curve.virtual_token_reserves as u128)
+        .checked_add(token_amount as u128)
+        .ok_or(ErrorCode::MathOverflow)?;
+    let new_vsol = div_ceil(k, new_vtok)?;
+    let sol_out_u128 = (curve.virtual_sol_reserves as u128)
+        .checked_sub(new_vsol)
+        .ok_or(ErrorCode::MathOverflow)?;
+
+    Ok((to_u64(sol_out_u128)?, to_u64(new_vsol)?, to_u64(new_vtok)?))
+}
+
+fn invariant(curve: &BondingCurve) -> Result<u128> {
+    (curve.virtual_sol_reserves as u128)
+        .checked_mul(curve.virtual_token_reserves as u128)
+        .ok_or(ErrorCode::MathOverflow.into())
+}
+
+fn div_ceil(numerator: u128, denominator: u128) -> Result<u128> {
+    require!(denominator > 0, ErrorCode::MathOverflow);
+    let quotient = numerator
+        .checked_div(denominator)
+        .ok_or(ErrorCode::MathOverflow)?;
+    let remainder = numerator
+        .checked_rem(denominator)
+        .ok_or(ErrorCode::MathOverflow)?;
+    if remainder == 0 {
+        Ok(quotient)
+    } else {
+        quotient
+            .checked_add(1)
+            .ok_or(ErrorCode::MathOverflow.into())
+    }
+}
+
+fn to_u64(value: u128) -> Result<u64> {
+    value.try_into().map_err(|_| ErrorCode::MathOverflow.into())
+}
+
+fn mark_complete(curve: &mut BondingCurve) -> bool {
+    if curve.complete {
+        return false;
+    }
+
+    let hit_sol_target =
+        curve.graduation_sol_target > 0 && curve.real_sol_reserves >= curve.graduation_sol_target;
+    let sold_out = curve.real_token_reserves == 0;
+    if hit_sol_target || sold_out {
+        curve.complete = true;
+        return true;
+    }
+
+    false
 }
