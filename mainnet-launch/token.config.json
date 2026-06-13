@@ -12,7 +12,7 @@
   "authorities": {
     "mintAuthority": "9WPztx4YNSrLr1ZD61kKziwqryQhrrTPomx6HodyJCS9",
     "freezeAuthority": null,
-    "treasuryOwner": "REPLACE_WITH_MULTISIG_OR_TREASURY_WALLET",
+    "treasuryOwner": "J9FDh3iZUjcSeSVS5uK159zn9YtDUbsMJYWkXSEMk6JC",
     "revokeMintAuthorityAfterMint": true
   },
   "allocation": [

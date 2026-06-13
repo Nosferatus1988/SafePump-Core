@@ -167,13 +167,36 @@ function main() {
     );
   }
 
+  console.log(`export TREASURY_OWNER=${authorities.treasuryOwner}`);
   console.log(
-    ["spl-token create-account", "$MINT", "--url", config.cluster].join(" "),
+    [
+      "export TREASURY_TOKEN_ACCOUNT=$(spl-token address",
+      "--token $MINT",
+      "--owner $TREASURY_OWNER",
+      "--url",
+      config.cluster,
+      ")",
+    ].join(" "),
   );
   console.log(
-    ["spl-token mint", "$MINT", shell(token.totalSupply), "--url", config.cluster].join(
-      " ",
-    ),
+    [
+      "spl-token create-account",
+      "--owner $TREASURY_OWNER",
+      "--url",
+      config.cluster,
+      "$MINT",
+    ].join(" "),
+  );
+  console.log(
+    [
+      "spl-token mint",
+      "--url",
+      config.cluster,
+      "$MINT",
+      shell(token.totalSupply),
+      "--",
+      "$TREASURY_TOKEN_ACCOUNT",
+    ].join(" "),
   );
 
   if (authorities.revokeMintAuthorityAfterMint) {
