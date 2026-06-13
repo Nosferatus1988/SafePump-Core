@@ -10,9 +10,12 @@
     "metadataUri": "https://solpump.io/metadata/solpump-token.json"
   },
   "authorities": {
-    "mintAuthority": "9WPztx4YNSrLr1ZD61kKziwqryQhrrTPomx6HodyJCS9",
+    "feePayer": "J9FDh3iZUjcSeSVS5uK159zn9YtDUbsMJYWkXSEMk6JC",
+    "ledgerKeypairUrl": "usb://ledger?key=0/0",
+    "mintAuthority": "J9FDh3iZUjcSeSVS5uK159zn9YtDUbsMJYWkXSEMk6JC",
     "freezeAuthority": null,
     "treasuryOwner": "J9FDh3iZUjcSeSVS5uK159zn9YtDUbsMJYWkXSEMk6JC",
+    "saleFundsReceiver": "J9FDh3iZUjcSeSVS5uK159zn9YtDUbsMJYWkXSEMk6JC",
     "revokeMintAuthorityAfterMint": true
   },
   "allocation": [
@@ -45,7 +48,9 @@
   "requiredBeforeMainnet": [
     "Confirm final symbol and supply",
     "Host token image and metadata URI publicly",
-    "Replace treasury owner with a multisig",
+    "Verify Ledger keypair URL resolves to the configured authority address",
+    "Confirm using one Ledger as authority is intentional instead of a multisig",
+    "Fund the Ledger authority with enough mainnet SOL",
     "Simulate every transaction",
     "Confirm mainnet spend in writing"
   ]

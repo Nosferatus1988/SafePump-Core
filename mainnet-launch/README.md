@@ -12,6 +12,7 @@ commands so the final transaction set can be reviewed before signing.
 - Decimals: `9`
 - Draft supply: `1,000,000,000`
 - Token program: classic SPL Token
+- Ledger authority: `J9FDh3iZUjcSeSVS5uK159zn9YtDUbsMJYWkXSEMk6JC`
 - Metadata file: [metadata/solpump-token.json](metadata/solpump-token.json)
 - Config file: [token.config.json](token.config.json)
 
@@ -33,7 +34,8 @@ Do not execute the generated commands until these are complete:
 
 - Final token symbol and supply confirmed.
 - Token image and metadata JSON hosted on a public, permanent URI.
-- Treasury owner replaced with a multisig or dedicated treasury wallet.
+- Ledger keypair URL verified against the configured authority address.
+- Ledger funded with enough mainnet SOL for minting, metadata, and liquidity.
 - Mint and freeze authority decisions signed off.
 - SafePump mainnet program audit scope completed.
 - Liquidity plan approved.
@@ -59,6 +61,11 @@ Recommended production posture:
 - Avoid enabling freeze authority unless there is a documented compliance need.
 - Move treasury and upgrade authority to multisig.
 - Publish all authority addresses before investor outreach.
+
+Current staging uses one Ledger address for fee payer, mint authority, treasury,
+and sale funds receiver. This is safer than a hot wallet, but it is not a
+multisig. A Squads multisig remains the stronger production setup for shared
+treasury and authority control.
 
 ## Legal Note
 

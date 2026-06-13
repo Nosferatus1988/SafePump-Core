@@ -103,9 +103,12 @@ function main() {
   console.log(`Metadata URI: ${token.metadataUri}`);
 
   printHeader("Authority plan");
+  console.log(`Fee payer: ${authorities.feePayer}`);
+  console.log(`Ledger keypair URL: ${authorities.ledgerKeypairUrl}`);
   console.log(`Mint authority: ${authorities.mintAuthority}`);
   console.log(`Freeze authority: ${authorities.freezeAuthority ?? "disabled"}`);
   console.log(`Treasury owner: ${authorities.treasuryOwner}`);
+  console.log(`Sale funds receiver: ${authorities.saleFundsReceiver}`);
   console.log(
     `Revoke mint authority after mint: ${
       authorities.revokeMintAuthorityAfterMint ? "yes" : "no"
@@ -120,11 +123,15 @@ function main() {
   });
 
   printHeader("Preflight checks");
-  console.log("solana address --url mainnet-beta");
-  console.log("solana balance --url mainnet-beta");
+  console.log(`export LEDGER_KEYPAIR_URL=${shell(authorities.ledgerKeypairUrl)}`);
+  console.log(`export EXPECTED_LEDGER_ADDRESS=${authorities.feePayer}`);
+  console.log("solana address -k $LEDGER_KEYPAIR_URL --url mainnet-beta");
+  console.log("solana balance $EXPECTED_LEDGER_ADDRESS --url mainnet-beta");
   console.log("solana epoch-info --url mainnet-beta");
 
   printHeader("Transaction commands");
+  console.log(`export LEDGER_KEYPAIR_URL=${shell(authorities.ledgerKeypairUrl)}`);
+  console.log(`export MINT_AUTHORITY=${authorities.mintAuthority}`);
 
   if (config.tokenProgram === "token-2022-metadata") {
     console.log(
@@ -134,6 +141,10 @@ function main() {
         "--enable-metadata",
         "--decimals",
         token.decimals,
+        "--mint-authority",
+        "$MINT_AUTHORITY",
+        "--fee-payer",
+        "$LEDGER_KEYPAIR_URL",
         "--url",
         config.cluster,
       ].join(" "),
@@ -147,6 +158,12 @@ function main() {
         shell(token.symbol),
         shell(token.metadataUri),
         "--program-2022",
+        "--mint-authority",
+        "$LEDGER_KEYPAIR_URL",
+        "--update-authority",
+        "$MINT_AUTHORITY",
+        "--fee-payer",
+        "$LEDGER_KEYPAIR_URL",
         "--url",
         config.cluster,
       ].join(" "),
@@ -157,6 +174,10 @@ function main() {
         "spl-token create-token",
         "--decimals",
         token.decimals,
+        "--mint-authority",
+        "$MINT_AUTHORITY",
+        "--fee-payer",
+        "$LEDGER_KEYPAIR_URL",
         "--url",
         config.cluster,
       ].join(" "),
@@ -182,6 +203,8 @@ function main() {
     [
       "spl-token create-account",
       "--owner $TREASURY_OWNER",
+      "--fee-payer",
+      "$LEDGER_KEYPAIR_URL",
       "--url",
       config.cluster,
       "$MINT",
@@ -192,6 +215,10 @@ function main() {
       "spl-token mint",
       "--url",
       config.cluster,
+      "--fee-payer",
+      "$LEDGER_KEYPAIR_URL",
+      "--mint-authority",
+      "$LEDGER_KEYPAIR_URL",
       "$MINT",
       shell(token.totalSupply),
       "--",
@@ -201,9 +228,18 @@ function main() {
 
   if (authorities.revokeMintAuthorityAfterMint) {
     console.log(
-      ["spl-token authorize", "$MINT", "mint", "--disable", "--url", config.cluster].join(
-        " ",
-      ),
+      [
+        "spl-token authorize",
+        "$MINT",
+        "mint",
+        "--disable",
+        "--authority",
+        "$LEDGER_KEYPAIR_URL",
+        "--fee-payer",
+        "$LEDGER_KEYPAIR_URL",
+        "--url",
+        config.cluster,
+      ].join(" "),
     );
   }
 
