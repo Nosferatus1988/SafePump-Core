@@ -1,11 +1,28 @@
 # SafePump-Core
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![good first issues](https://img.shields.io/github/issues/Nosferatus1988/SafePump-Core/good-first-issue?label=good%20first%20issues)](https://github.com/Nosferatus1988/SafePump-Core/issues?q=is%3Aissue+is%3Aopen+label%3A%22good-first-issue%22)
+[![Solana](https://img.shields.io/badge/Solana-Anchor%201.0-9945FF)](https://www.anchor-lang.com/)
+
 Anti-MEV bonding-curve launchpad on Solana, written in Anchor/Rust.
 
-This repository is now set up as a devnet MVP. It can initialize a launch,
-route first-slot snipes into a vesting vault, let normal buyers buy and sell on
-the bonding curve, and mark a curve complete when an optional graduation target
-is reached.
+This repository is a devnet MVP. It can initialize a launch, route first-slot
+snipes into a vesting vault, let normal buyers buy and sell on the bonding
+curve, and mark a curve complete when an optional graduation target is reached.
+
+🌐 Live site: [safepump-core.com](https://www.safepump-core.com)
+
+## 🛠️ Looking for contributors
+
+SafePump-Core is open source and actively looking for collaborators. If you know **Rust + Anchor**, **TypeScript + Solana web3.js**, **Next.js + wallet-adapter**, or just want to write docs and tests — there's a place for you.
+
+- 🎯 [Open good-first-issues](https://github.com/Nosferatus1988/SafePump-Core/issues?q=is%3Aissue+is%3Aopen+label%3A%22good-first-issue%22) — scoped, beginner-friendly tasks
+- 📖 [CONTRIBUTING.md](CONTRIBUTING.md) — workflow, conventions, quick start
+- 🔒 [SECURITY.md](SECURITY.md) — responsible disclosure
+- 💬 [Discussions](https://github.com/Nosferatus1988/SafePump-Core/discussions) — design questions, RFCs
+
+Currently a solo project; aiming for 3-5 active contributors before mainnet. Contributors will be credited and may be eligible for token allocation if a mainnet launch happens (see [CONTRIBUTING.md](CONTRIBUTING.md#recognition)).
 
 ## Program ID
 
